@@ -60,8 +60,8 @@ pub struct Lexer {
         Ok(())
     }
 }
-pub fn lex(name: String, text: String) -> Result<Vec<Token>, String> {
-    let mut lexer = Lexer::new(File{name, text});
+pub fn lex(name: &String, text: String) -> Result<Vec<Token>, String> {
+    let mut lexer = Lexer::new(File{name: name.clone(), text});
     let res = lexer.lex();
     if res.is_err() { return Err(res.err().unwrap()) }
     return Ok(lexer.tokens)
