@@ -20,11 +20,11 @@ pub enum TYPES {
 }
 #[derive(Debug)]
 pub struct Token {
-    pub typ: TYPES,
+    pub token: TYPES,
     pub start: usize,
     pub stop: usize
 } impl Token {
-    pub fn new(typ: TYPES, start: usize, stop: usize) -> Self { Self { typ, start, stop } }
+    pub fn new(token: TYPES, start: usize, stop: usize) -> Self { Self { token, start, stop } }
 }
 
 // LEXER

@@ -1,10 +1,14 @@
 #![allow(dead_code)]
 #![allow(unused)]
+mod stack;
+mod lexer;
+mod run;
+
+use stack::Stack;
+
 use std::fs::File;
 use std::io::{BufRead, BufReader, ErrorKind};
 use std::process::exit;
-
-mod lexer;
 pub fn read_file(path: &str) -> String {
     let f = match File::open(path) {
         Ok(v) => v,
@@ -31,5 +35,10 @@ fn main() {
     let lex_res = lexer::lex(file_name, text);
     if lex_res.is_err() { eprintln!("{}", lex_res.err().unwrap()); return }
     let tokens = lex_res.unwrap();
-    for token in tokens { println!("{:?}", token); }
+    for token in &tokens { println!("{:?}", token); } println!();
+    let res = run::run(tokens);
+    if res.is_err() { eprintln!("{}", res.err().unwrap()); return }
+    let stack = res.unwrap();
+    println!("{:?}", stack.to_vec());
+    return
 }
