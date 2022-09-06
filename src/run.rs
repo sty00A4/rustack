@@ -20,6 +20,11 @@ struct Interpreter {
                     if self.stack.len() < 1 { continue }
                     while self.stack.peek().unwrap() != &0 { self.interpret(tokens_).unwrap(); }
                 }
+                TYPES::IF(tokens_) => {
+                    if self.stack.len() < 1 { continue }
+                    let a = self.stack.peek().unwrap();
+                    if a != &0 { self.stack.pop(); self.interpret(tokens_).unwrap(); }
+                }
                 TYPES::ADD => {
                     if self.stack.len() < 2 { continue }
                     let b = self.stack.pop().unwrap();
