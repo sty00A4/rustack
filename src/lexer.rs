@@ -18,12 +18,11 @@ pub struct File {
 
 // TOKEN
 #[derive(Debug, PartialEq)]
-pub enum TYPES { NONE,
+pub enum TYPES {
     INT(isize), TYPE, BODY(Vec<Token>),
-    ADD, SUB, MUL, DIV,
-    EQ, NE, LT, GT, NOT,
+    ADD, SUB, MUL, DIV, EQ, NE, LT, GT, NOT,
     IF(Vec<Token>), REPEAT(Vec<Token>), WHILE(Vec<Token>),
-    ID(String)
+    SET(String), ID(String),
 }
 #[derive(Debug, PartialEq)]
 pub struct Token {
@@ -32,7 +31,6 @@ pub struct Token {
     pub stop: usize
 } impl Token {
     pub fn new(token: TYPES, start: usize, stop: usize) -> Self { Self { token, start, stop } }
-    pub fn none() -> Self { Self { token: TYPES::NONE, start: 0, stop: 0 } }
 }
 
 // LEXER
@@ -69,6 +67,18 @@ pub struct Lexer {
             }
             self.advance();
             return Ok(Token::new(TYPES::BODY(tokens), start, self.idx));
+        }
+        // SET
+        if self.char() == "@" {
+            self.advance();
+            if LETTERS.contains(&self.char()) {
+                self.advance();
+                while LETTERS.contains(&self.char()) || DIGITS.contains(&self.char()) { self.advance(); }
+                let word = self.range(start+1, self.idx);
+                if ["if", "repeat", "while"].contains(&word) { return Err(String::from("SYNTAX ERROR: expected id, not keyword")) }
+                return Ok(Token::new(TYPES::SET(String::from(word)), start, self.idx));
+            }
+            return Err(String::from("SYNTAX ERROR: expected id"))
         }
         // OPERATION
         if self.char() == "+" {
