@@ -5,7 +5,7 @@ use crate::stack::Stack;
 struct Interpreter {
     stack: Stack<isize>,
     vars: Vec<(String, isize)>,
-    macros: Vec<(String, Token)>
+    macros: Vec<(String, Vec<Token>)>
 } impl Interpreter {
     pub fn new() -> Self { Self { stack: Stack::new(), vars: Vec::new(), macros: Vec::new() } }
     pub fn interpret(&mut self, tokens: &Vec<Token>) -> Result<(), String> {
@@ -18,7 +18,11 @@ struct Interpreter {
                     for i in 0..self.vars.len() {
                         if self.vars[i].0 == id.clone() {
                             found = true;
-                            self.vars[i].1 = self.stack.pop().unwrap();
+                            if self.stack.len() < 1 {
+                                self.vars[i].1 = 0;
+                            } else {
+                                self.vars[i].1 = self.stack.pop().unwrap();
+                            }
                             break
                         }
                     }

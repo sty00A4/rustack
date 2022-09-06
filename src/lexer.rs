@@ -22,7 +22,7 @@ pub enum TYPES {
     INT(isize), TYPE, BODY(Vec<Token>),
     ADD, SUB, MUL, DIV, EQ, NE, LT, GT, NOT,
     IF(Vec<Token>), REPEAT(Vec<Token>), WHILE(Vec<Token>),
-    SET(String), ID(String),
+    SET(String), ID(String), MACRO(String, Vec<Token>)
 }
 #[derive(Debug, PartialEq)]
 pub struct Token {
@@ -122,6 +122,18 @@ pub struct Lexer {
                 "if" => return Ok(Token::new(TYPES::IF(vec![self.next().unwrap()]), start, self.idx)),
                 "repeat" => return Ok(Token::new(TYPES::REPEAT(vec![self.next().unwrap()]), start, self.idx)),
                 "while" => return Ok(Token::new(TYPES::WHILE(vec![self.next().unwrap()]), start, self.idx)),
+                "macro" => {
+                    if self.char() == "" { return Err(String::from("EOF ERROR: unexpected end of file")) }
+                    let mut id_token = self.next().unwrap();
+                    let mut id = String::new();
+                    match id_token.token {
+                        TYPES::ID(id_) => id = id_,
+                        _ => return Err(String::from("SYNTAX ERROR: expected id"))
+                    }
+                    if self.char() == "" { return Err(String::from("EOF ERROR: unexpected end of file")) }
+                    let body = vec![self.next().unwrap()];
+                    return Ok(Token::new(TYPES::MACRO(id, body), start, self.idx))
+                },
                 _ => {}
             }
             return Ok(Token::new(TYPES::ID(String::from(word)), start, self.idx));
