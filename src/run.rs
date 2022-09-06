@@ -10,7 +10,7 @@ struct Interpreter {
             match &token.token {
                 TYPES::INT(value) => self.stack.push(*value),
                 TYPES::BODY(tokens_) => self.interpret(tokens_).unwrap(),
-                _ => continue
+                _ => println!("unknown token {:?}", token.token)
             }
         }
         Ok(())

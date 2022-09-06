@@ -13,8 +13,10 @@ pub struct File {
 
 // TOKEN
 #[derive(Debug, PartialEq)]
-pub enum TYPES {
-    INT(isize), TYPE, BODY(Vec<Token>), NONE
+pub enum TYPES { NONE,
+    INT(isize), TYPE, BODY(Vec<Token>),
+    ADD, SUB, MUL, DIV, IDIV,
+    EQ, NE, LT, GT, NOT
 }
 #[derive(Debug, PartialEq)]
 pub struct Token {
@@ -60,6 +62,43 @@ pub struct Lexer {
             self.advance();
             return Ok(Token::new(TYPES::BODY(tokens), start, self.idx));
         }
+        if self.char() == "+" {
+            self.advance();
+            return Ok(Token::new(TYPES::ADD, start, self.idx));
+        }
+        if self.char() == "-" {
+            self.advance();
+            return Ok(Token::new(TYPES::SUB, start, self.idx));
+        }
+        if self.char() == "*" {
+            self.advance();
+            return Ok(Token::new(TYPES::MUL, start, self.idx));
+        }
+        if self.char() == "/" {
+            self.advance();
+            if self.char() == "/" {
+                self.advance();
+                return Ok(Token::new(TYPES::IDIV, start, self.idx));
+            }
+            return Ok(Token::new(TYPES::DIV, start, self.idx));
+        }
+        if self.char() == "=" {
+            self.advance();
+            return Ok(Token::new(TYPES::EQ, start, self.idx));
+        }
+        if self.char() == "<" {
+            self.advance();
+            return Ok(Token::new(TYPES::LT, start, self.idx));
+        }
+        if self.char() == ">" {
+            self.advance();
+            return Ok(Token::new(TYPES::GT, start, self.idx));
+        }
+        if self.char() == "!" {
+            self.advance();
+            return Ok(Token::new(TYPES::NOT, start, self.idx));
+        }
+        self.idx = start;
         Err(String::from(format!("CHAR ERROR: '{}'", self.char())))
     }
     pub fn lex(&mut self) -> Result<(), String> {
