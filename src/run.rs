@@ -1,43 +1,50 @@
 use crate::lexer::{Token, TYPES};
 use crate::read_file;
 use crate::stack::Stack;
+use std::collections::HashMap;
 
 struct Interpreter {
     stack: Stack<isize>,
-    vars: Vec<(String, isize)>,
-    macros: Vec<(String, Vec<Token>)>
+    vars: HashMap<String, isize>,
+    memory: Vec<Vec<Token>>,
+    macros: HashMap<String, usize>
 } impl Interpreter {
-    pub fn new() -> Self { Self { stack: Stack::new(), vars: Vec::new(), macros: Vec::new() } }
+    pub fn new() -> Self {
+        Self { stack: Stack::new(), vars: HashMap::new(), macros: HashMap::new(), memory: Vec::new() }
+    }
     pub fn interpret(&mut self, tokens: &Vec<Token>) -> Result<(), String> {
         for token in tokens {
             match &token.token {
                 TYPES::INT(value) => self.stack.push(*value),
                 TYPES::BODY(tokens_) => self.interpret(tokens_).unwrap(),
                 TYPES::SET(id) => {
-                    let mut found = false;
-                    for i in 0..self.vars.len() {
-                        if self.vars[i].0 == id.clone() {
-                            found = true;
-                            if self.stack.len() < 1 {
-                                self.vars[i].1 = 0;
-                            } else {
-                                self.vars[i].1 = self.stack.pop().unwrap();
-                            }
-                            break
-                        }
+                    if self.macros.contains_key(id) {
+                        return Err(String::from("ID ERROR: id is registered macro and cannot be redefined"))
                     }
-                    if !found { self.vars.push((id.clone(), self.stack.pop().unwrap())); }
+                    if self.vars.contains_key(id) {
+                        self.vars.insert(id.clone(), self.stack.pop().unwrap());
+                        continue
+                    }
+                    self.vars.insert(id.clone(), self.stack.pop().unwrap());
+                }
+                TYPES::MACRO(id, tokens_) => {
+                    if self.macros.contains_key(id) {
+                        return Err(String::from(format!("MACRO ERROR: macro '{id}' is already defined")))
+                    }
+                    self.memory.push(tokens_.clone());
+                    self.macros.insert(id.clone(), self.memory.len()-1);
                 }
                 TYPES::ID(id) => {
-                    let mut found = false;
-                    for i in 0..self.vars.len() {
-                        if self.vars[i].0 == id.clone() {
-                            found = true;
-                            self.stack.push(self.vars[i].1);
-                            break
-                        }
+                    if self.vars.contains_key(id) {
+                        self.stack.push(self.vars.get(id).unwrap().clone());
+                        continue
+                    } else if self.macros.contains_key(id) {
+                        let ptr = self.macros.get(id).unwrap().clone();
+                        let tokens_ = self.memory[ptr].clone();
+                        self.interpret(&tokens_).unwrap();
+                        continue
                     }
-                    if !found { return Err(String::from(format!("ID ERROR: id '{}' not registered", id))) }
+                    return Err(String::from(format!("ID ERROR: id '{}' not registered", id)))
                 }
                 TYPES::REPEAT(tokens_) => {
                     if self.stack.len() < 1 { continue }

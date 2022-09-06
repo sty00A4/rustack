@@ -17,14 +17,14 @@ pub struct File {
 }
 
 // TOKEN
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TYPES {
     INT(isize), TYPE, BODY(Vec<Token>),
     ADD, SUB, MUL, DIV, EQ, NE, LT, GT, NOT,
     IF(Vec<Token>), REPEAT(Vec<Token>), WHILE(Vec<Token>),
     SET(String), ID(String), MACRO(String, Vec<Token>)
 }
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Token {
     pub token: TYPES,
     pub start: usize,

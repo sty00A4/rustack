@@ -43,9 +43,13 @@ struct Flags {
 }
 
 fn main() {
+    // FLAGS
     let mut flags = Flags::new();
     let mut args: Vec<String> = env::args().collect();
-    if args.len() <= 1 { args.push(String::from("test/test.rst")); args.push(String::from("--stack")) }
+    if args.len() <= 1 {
+        args.push(String::from("test/test.rst"));
+        args.push(String::from("--stack"));
+    }
     if args.len() > 2 {
         let mut input_flags: Vec<String> = Vec::new();
         for i in 2..args.len() { input_flags.push((&args[i]).clone()) }
@@ -57,12 +61,15 @@ fn main() {
             }
         }
     }
+    // FILE
     let file_name = &args[1];
     let text = read_file(file_name.as_str());
+    // LEX
     let lex_res = lexer::lex(&file_name, text);
     if lex_res.is_err() { eprintln!("{}", lex_res.err().unwrap()); return }
     let tokens = lex_res.unwrap();
     if flags.tokens { println!(); for token in &tokens { println!("{:?}", token); } println!(); }
+    // RUN
     let res = run::run(tokens);
     if res.is_err() { eprintln!("{}", res.err().unwrap()); return }
     let stack = res.unwrap();
