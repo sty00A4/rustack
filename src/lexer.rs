@@ -3,6 +3,11 @@
 
 // GLOBALS
 static DIGITS: [&str; 10] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+static LETTERS: [&str; 53] = [
+    "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
+    "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
+    "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "_"
+];
 
 // FILE
 #[derive(Debug)]
@@ -16,7 +21,9 @@ pub struct File {
 pub enum TYPES { NONE,
     INT(isize), TYPE, BODY(Vec<Token>),
     ADD, SUB, MUL, DIV,
-    EQ, NE, LT, GT, NOT
+    EQ, NE, LT, GT, NOT,
+    IF(Box<Token>), REPEAT(Box<Token>), WHILE(Box<Token>),
+    ID(String)
 }
 #[derive(Debug, PartialEq)]
 pub struct Token {
@@ -43,25 +50,27 @@ pub struct Lexer {
     }
     pub fn range(&self, start: usize, stop: usize) -> &str { &self.file.text[start..stop] }
     pub fn next(&mut self) -> Result<Token, String> {
-        if self.char() == " " || self.char() == "\t" { self.advance(); return Ok((Token::none())) }
+        while self.char() == " " || self.char() == "\t" { self.advance(); }
         let start = self.idx;
+        // NUMBER
         if DIGITS.contains(&self.char()) {
             while DIGITS.contains(&self.char()) { self.advance(); }
             let number = self.range(start, self.idx);
             return Ok(Token::new(TYPES::INT(number.parse::<isize>().unwrap()), start, self.idx));
         }
+        // BODY
         if self.char() == "(" {
             self.advance();
             let mut tokens: Vec<Token> = Vec::new();
             while self.char() != ")" && self.char() != "" {
                 let res = self.next();
                 if res.is_err() { return Err(res.err().unwrap()) }
-                if matches!(res.as_ref().unwrap().token, TYPES::NONE) { continue }
                 tokens.push(res.unwrap());
             }
             self.advance();
             return Ok(Token::new(TYPES::BODY(tokens), start, self.idx));
         }
+        // OPERATION
         if self.char() == "+" {
             self.advance();
             return Ok(Token::new(TYPES::ADD, start, self.idx));
@@ -94,6 +103,19 @@ pub struct Lexer {
             self.advance();
             return Ok(Token::new(TYPES::NOT, start, self.idx));
         }
+        // WORD
+        if LETTERS.contains(&self.char()) {
+            self.advance();
+            while LETTERS.contains(&self.char()) || DIGITS.contains(&self.char()) { self.advance(); }
+            let word = self.range(start, self.idx);
+            match word {
+                "if" => return Ok(Token::new(TYPES::IF(Box::new(self.next().unwrap())), start, self.idx)),
+                "repeat" => return Ok(Token::new(TYPES::REPEAT(Box::new(self.next().unwrap())), start, self.idx)),
+                "while" => return Ok(Token::new(TYPES::WHILE(Box::new(self.next().unwrap())), start, self.idx)),
+                _ => {}
+            }
+            return Ok(Token::new(TYPES::ID(String::from(word)), start, self.idx));
+        }
         self.idx = start;
         Err(String::from(format!("CHAR ERROR: '{}'", self.char())))
     }
@@ -101,7 +123,6 @@ pub struct Lexer {
         while self.char() != "" {
             let res = self.next();
             if res.is_err() { return Err(res.err().unwrap()) }
-            if matches!(res.as_ref().unwrap().token, TYPES::NONE) { continue }
             self.tokens.push(res.unwrap());
         }
         Ok(())
