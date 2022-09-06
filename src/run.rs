@@ -113,6 +113,17 @@ struct Interpreter {
                     let a = self.stack.pop().unwrap();
                     self.stack.push((a == 0) as isize)
                 }
+                TYPES::PRINT => {
+                    if self.stack.len() < 1 { print!(" "); continue }
+                    print!("{:?}", self.stack.pop().unwrap());
+                }
+                TYPES::VAR(var) => {
+                    match var.as_str() {
+                        "STACK" => println!("{:?}", self.stack.to_vec()),
+                        "LENGTH" => self.stack.push(self.stack.len() as isize),
+                        _ => {}
+                    };
+                }
                 _ => println!("unknown token {:?}", token.token)
             }
         }

@@ -8,6 +8,7 @@ static LETTERS: [&str; 53] = [
     "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
     "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "_"
 ];
+static VARS: [&str; 2] = ["STACK", "LENGTH"];
 
 // FILE
 #[derive(Debug)]
@@ -22,7 +23,9 @@ pub enum TYPES {
     INT(isize), TYPE, BODY(Vec<Token>),
     ADD, SUB, MUL, DIV, EQ, NE, LT, GT, NOT,
     IF(Vec<Token>), REPEAT(Vec<Token>), WHILE(Vec<Token>),
-    SET(String), ID(String), MACRO(String, Vec<Token>)
+    SET(String), ID(String), MACRO(String, Vec<Token>),
+    PRINT,
+    VAR(String)
 }
 #[derive(Debug, PartialEq, Clone)]
 pub struct Token {
@@ -64,6 +67,7 @@ pub struct Lexer {
                 let res = self.next();
                 if res.is_err() { return Err(res.err().unwrap()) }
                 tokens.push(res.unwrap());
+                while self.char() == " " || self.char() == "\t" || self.char() == "\n" { self.advance(); }
             }
             self.advance();
             return Ok(Token::new(TYPES::BODY(tokens), start, self.idx));
@@ -134,8 +138,10 @@ pub struct Lexer {
                     let body = vec![self.next().unwrap()];
                     return Ok(Token::new(TYPES::MACRO(id, body), start, self.idx))
                 },
+                "print" => return Ok(Token::new(TYPES::PRINT, start, self.idx)),
                 _ => {}
             }
+            if VARS.contains(&word) { return Ok(Token::new(TYPES::VAR(String::from(word)), start, self.idx)) }
             return Ok(Token::new(TYPES::ID(String::from(word)), start, self.idx));
         }
         self.idx = start;

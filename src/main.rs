@@ -48,7 +48,6 @@ fn main() {
     let mut args: Vec<String> = env::args().collect();
     if args.len() <= 1 {
         args.push(String::from("test/test.rst"));
-        args.push(String::from("--stack"));
     }
     if args.len() > 2 {
         let mut input_flags: Vec<String> = Vec::new();
