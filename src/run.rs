@@ -7,8 +7,9 @@ struct Interpreter {
     pub fn new() -> Self { Self { stack: Stack::new() } }
     pub fn interpret(&mut self, tokens: &Vec<Token>) -> Result<(), String> {
         for token in tokens {
-            match token.token {
-                TYPES::INT(value) => self.stack.push(value),
+            match &token.token {
+                TYPES::INT(value) => self.stack.push(*value),
+                TYPES::SUB(tokens_) => self.interpret(tokens_).unwrap(),
                 _ => continue
             }
         }
