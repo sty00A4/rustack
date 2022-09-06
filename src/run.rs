@@ -9,7 +9,7 @@ struct Interpreter {
         for token in tokens {
             match &token.token {
                 TYPES::INT(value) => self.stack.push(*value),
-                TYPES::SUB(tokens_) => self.interpret(tokens_).unwrap(),
+                TYPES::BODY(tokens_) => self.interpret(tokens_).unwrap(),
                 _ => continue
             }
         }
