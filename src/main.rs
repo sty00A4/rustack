@@ -31,7 +31,8 @@ pub fn read_file(path: &str) -> String {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    let mut args: Vec<String> = env::args().collect();
+    if args.len() <= 1 { args.push(String::from("test/test.rst")) }
     let file_name = &args[1];
     let text = read_file(file_name.as_str());
     let lex_res = lexer::lex(&file_name, text);
