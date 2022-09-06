@@ -30,18 +30,42 @@ pub fn read_file(path: &str) -> String {
     return text;
 }
 
+struct Flags {
+    stack: bool,
+    tokens: bool,
+} impl Flags {
+    pub fn new() -> Self {
+        Self {
+            stack: false,
+            tokens: false,
+        }
+    }
+}
+
 fn main() {
+    let mut flags = Flags::new();
     let mut args: Vec<String> = env::args().collect();
-    if args.len() <= 1 { args.push(String::from("test/test.rst")) }
+    if args.len() <= 1 { args.push(String::from("test/test.rst")); args.push(String::from("--stack")) }
+    if args.len() > 2 {
+        let mut input_flags: Vec<String> = Vec::new();
+        for i in 2..args.len() { input_flags.push((&args[i]).clone()) }
+        for flag in input_flags {
+            match flag.as_str() {
+                "--stack" => flags.stack = true,
+                "--tokens" => flags.tokens = true,
+                _ => { eprintln!("unsupported '{}'", &args[2]);return; }
+            }
+        }
+    }
     let file_name = &args[1];
     let text = read_file(file_name.as_str());
     let lex_res = lexer::lex(&file_name, text);
     if lex_res.is_err() { eprintln!("{}", lex_res.err().unwrap()); return }
     let tokens = lex_res.unwrap();
-    //for token in &tokens { println!("{:?}", token); } println!();
+    if flags.tokens { println!(); for token in &tokens { println!("{:?}", token); } println!(); }
     let res = run::run(tokens);
     if res.is_err() { eprintln!("{}", res.err().unwrap()); return }
     let stack = res.unwrap();
-    println!("{:?}", stack.to_vec());
+    if flags.stack { println!("{:?}", stack.to_vec()) };
     return
 }

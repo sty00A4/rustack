@@ -3,4 +3,9 @@ name = "rustack"
 version = "0.1.0"
 edition = "2021"
 [profile.dev]
-opt-level = 1
+opt-level = "s"
+[profile.release]
+opt-level = "s"
+strip = true
+lto = true
+codegen-units = 1
