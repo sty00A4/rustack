@@ -15,7 +15,7 @@ pub struct File {
 #[derive(Debug, PartialEq)]
 pub enum TYPES { NONE,
     INT(isize), TYPE, BODY(Vec<Token>),
-    ADD, SUB, MUL, DIV, IDIV,
+    ADD, SUB, MUL, DIV,
     EQ, NE, LT, GT, NOT
 }
 #[derive(Debug, PartialEq)]
@@ -76,10 +76,6 @@ pub struct Lexer {
         }
         if self.char() == "/" {
             self.advance();
-            if self.char() == "/" {
-                self.advance();
-                return Ok(Token::new(TYPES::IDIV, start, self.idx));
-            }
             return Ok(Token::new(TYPES::DIV, start, self.idx));
         }
         if self.char() == "=" {
