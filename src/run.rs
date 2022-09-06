@@ -41,6 +41,7 @@ struct Interpreter {
                     } else if self.macros.contains_key(id) {
                         let ptr = self.macros.get(id).unwrap().clone();
                         let tokens_ = self.memory[ptr].clone();
+                        // todo: vars temp save, vars clear, vars temp reload
                         self.interpret(&tokens_).unwrap();
                         continue
                     }
