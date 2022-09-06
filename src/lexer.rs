@@ -22,7 +22,7 @@ pub enum TYPES { NONE,
     INT(isize), TYPE, BODY(Vec<Token>),
     ADD, SUB, MUL, DIV,
     EQ, NE, LT, GT, NOT,
-    IF(Box<Token>), REPEAT(Box<Token>), WHILE(Box<Token>),
+    IF(Vec<Token>), REPEAT(Vec<Token>), WHILE(Vec<Token>),
     ID(String)
 }
 #[derive(Debug, PartialEq)]
@@ -50,7 +50,7 @@ pub struct Lexer {
     }
     pub fn range(&self, start: usize, stop: usize) -> &str { &self.file.text[start..stop] }
     pub fn next(&mut self) -> Result<Token, String> {
-        while self.char() == " " || self.char() == "\t" { self.advance(); }
+        while self.char() == " " || self.char() == "\t" || self.char() == "\n" { self.advance(); }
         let start = self.idx;
         // NUMBER
         if DIGITS.contains(&self.char()) {
@@ -109,9 +109,9 @@ pub struct Lexer {
             while LETTERS.contains(&self.char()) || DIGITS.contains(&self.char()) { self.advance(); }
             let word = self.range(start, self.idx);
             match word {
-                "if" => return Ok(Token::new(TYPES::IF(Box::new(self.next().unwrap())), start, self.idx)),
-                "repeat" => return Ok(Token::new(TYPES::REPEAT(Box::new(self.next().unwrap())), start, self.idx)),
-                "while" => return Ok(Token::new(TYPES::WHILE(Box::new(self.next().unwrap())), start, self.idx)),
+                "if" => return Ok(Token::new(TYPES::IF(vec![self.next().unwrap()]), start, self.idx)),
+                "repeat" => return Ok(Token::new(TYPES::REPEAT(vec![self.next().unwrap()]), start, self.idx)),
+                "while" => return Ok(Token::new(TYPES::WHILE(vec![self.next().unwrap()]), start, self.idx)),
                 _ => {}
             }
             return Ok(Token::new(TYPES::ID(String::from(word)), start, self.idx));

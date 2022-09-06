@@ -11,6 +11,13 @@ struct Interpreter {
             match &token.token {
                 TYPES::INT(value) => self.stack.push(*value),
                 TYPES::BODY(tokens_) => self.interpret(tokens_).unwrap(),
+                TYPES::REPEAT(tokens_) => {
+                    if self.stack.len() < 1 { continue }
+                    let a = self.stack.pop().unwrap();
+                    for i in 0..a {
+                        self.interpret(tokens_).unwrap();
+                    }
+                }
                 TYPES::ADD => {
                     if self.stack.len() < 2 { continue }
                     let b = self.stack.pop().unwrap();
