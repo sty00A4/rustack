@@ -1,1 +1,1 @@
-5 repeat(2 +)
+5 while(1 -)
