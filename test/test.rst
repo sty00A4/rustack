@@ -1,3 +1,3 @@
-0 1 > if 0 else 1
+0 1 > if 4
 
 STACK

@@ -166,30 +166,30 @@ struct Interpreter {
                     if self.stack.len() < 2 { continue }
                     let b = self.stack.pop().unwrap();
                     let a = self.stack.pop().unwrap();
-                    self.stack.push((a == b) as isize)
+                    if a == b { self.stack.push(1) } else { self.stack.push(0) }
                 }
                 TYPES::NE => {
                     if self.stack.len() < 2 { continue }
                     let b = self.stack.pop().unwrap();
                     let a = self.stack.pop().unwrap();
-                    self.stack.push((a != b) as isize)
+                    if a != b { self.stack.push(1) } else { self.stack.push(0) }
                 }
                 TYPES::LT => {
                     if self.stack.len() < 2 { continue }
                     let b = self.stack.pop().unwrap();
                     let a = self.stack.pop().unwrap();
-                    self.stack.push((a < b) as isize)
+                    if a < b { self.stack.push(1) } else { self.stack.push(0) }
                 }
                 TYPES::GT => {
                     if self.stack.len() < 2 { continue }
                     let b = self.stack.pop().unwrap();
                     let a = self.stack.pop().unwrap();
-                    self.stack.push((a > b) as isize)
+                    if a > b { self.stack.push(1) } else { self.stack.push(0) }
                 }
                 TYPES::NOT => {
                     if self.stack.len() < 1 { continue }
                     let a = self.stack.pop().unwrap();
-                    self.stack.push((a == 0) as isize)
+                    if a == 0 { self.stack.push(1) } else { self.stack.push(0) }
                 }
                 TYPES::PRINT => {
                     if self.stack.len() < 1 { print!(" "); continue }
