@@ -47,6 +47,7 @@ struct Interpreter {
     pub fn interpret(&mut self, tokens: &Vec<Token>) -> Result<(), String> {
         for token in tokens {
             match &token.token {
+                TYPES::NONE => {},
                 TYPES::INT(value) => self.stack.push(*value),
                 TYPES::BODY(tokens_) => {
                     let res = self.interpret(tokens_);
@@ -124,12 +125,16 @@ struct Interpreter {
                         if res.is_err() { return Err(res.err().unwrap()) }
                     }
                 }
-                TYPES::IF(tokens_) => {
+                TYPES::IF(if_case, else_case) => {
                     if self.stack.len() < 1 { continue }
                     let a = self.stack.peek().unwrap();
                     if a != &0 {
                         self.stack.pop();
-                        let res = self.interpret(tokens_);
+                        let res = self.interpret(if_case);
+                        if res.is_err() { return Err(res.err().unwrap()) }
+                    } else if else_case[0].token != TYPES::NONE {
+                        self.stack.pop();
+                        let res = self.interpret(else_case);
                         if res.is_err() { return Err(res.err().unwrap()) }
                     }
                 }

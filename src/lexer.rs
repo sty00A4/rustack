@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 #![allow(unused)]
 
+use std::cmp::min;
+
 // GLOBALS
 static DIGITS: [&str; 10] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 static LETTERS: [&str; 53] = [
@@ -23,7 +25,7 @@ pub struct File {
 pub enum TYPES { NONE,
     INT(isize), TYPE, BODY(Vec<Token>), MAP(Vec<String>), SIZE(Box<Token>),
     ADD, SUB, MUL, DIV, EQ, NE, LT, GT, NOT,
-    IF(Vec<Token>), REPEAT(Vec<Token>), WHILE(Vec<Token>),
+    IF(Vec<Token>, Vec<Token>), REPEAT(Vec<Token>), WHILE(Vec<Token>),
     SET(String), ID(String), MACRO(String, Box<Token>, Vec<Token>),
     PRINT,
     VAR(String)
@@ -51,7 +53,9 @@ pub struct Lexer {
         if self.idx >= self.file.text.len() { return "" }
         &self.file.text[self.idx..self.idx+1]
     }
-    pub fn range(&self, start: usize, stop: usize) -> &str { &self.file.text[start..stop] }
+    pub fn range(&self, start: usize, stop: usize) -> &str {
+        &self.file.text[min(start, self.file.text.len()-1)..min(stop, self.file.text.len())]
+    }
     pub fn word(&mut self) -> Result<&str, String> {
         if !LETTERS.contains(&self.char()) { return Err(String::from("SYNTAX ERROR: expected id")) }
         let start = self.idx;
@@ -156,7 +160,16 @@ pub struct Lexer {
                 "if" => {
                     let res = self.next();
                     if res.is_err() { return Err(res.err().unwrap()) }
-                    return Ok(Token::new(TYPES::IF(vec![res.unwrap()]), start, self.idx));
+                    let if_case = res.unwrap();
+                    let mut else_case = Token::none();
+                    while self.char() == " " || self.char() == "\t" || self.char() == "\n" { self.advance(); }
+                    if self.range(self.idx, self.idx+"else".len()) == "else" {
+                        self.idx += "else".len();
+                        let res = self.next();
+                        if res.is_err() { return Err(res.err().unwrap()) }
+                        else_case = res.unwrap();
+                    }
+                    return Ok(Token::new(TYPES::IF(vec![if_case], vec![else_case]), start, self.idx));
                 }
                 "repeat" => {
                     let res = self.next();
