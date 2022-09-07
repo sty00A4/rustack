@@ -9,6 +9,7 @@ static LETTERS: [&str; 53] = [
     "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "_"
 ];
 static VARS: [&str; 2] = ["STACK", "LENGTH"];
+static WORDS: [&str; 7] = ["if", "repeat", "while", "int", "str", "STACK", "LENGTH"];
 
 // FILE
 #[derive(Debug)]
@@ -19,11 +20,11 @@ pub struct File {
 
 // TOKEN
 #[derive(Debug, PartialEq, Clone)]
-pub enum TYPES {
-    INT(isize), TYPE, BODY(Vec<Token>),
+pub enum TYPES { NONE,
+    INT(isize), TYPE, BODY(Vec<Token>), MAP(Vec<String>), SIZE(Box<Token>),
     ADD, SUB, MUL, DIV, EQ, NE, LT, GT, NOT,
     IF(Vec<Token>), REPEAT(Vec<Token>), WHILE(Vec<Token>),
-    SET(String), ID(String), MACRO(String, Vec<Token>),
+    SET(String), ID(String), MACRO(String, Box<Token>, Vec<Token>),
     PRINT,
     VAR(String)
 }
@@ -34,6 +35,7 @@ pub struct Token {
     pub stop: usize
 } impl Token {
     pub fn new(token: TYPES, start: usize, stop: usize) -> Self { Self { token, start, stop } }
+    pub fn none() -> Self { Self { token: TYPES::NONE, start: 0, stop: 0 } }
 }
 
 // LEXER
@@ -50,6 +52,12 @@ pub struct Lexer {
         &self.file.text[self.idx..self.idx+1]
     }
     pub fn range(&self, start: usize, stop: usize) -> &str { &self.file.text[start..stop] }
+    pub fn word(&mut self) -> Result<&str, String> {
+        if !LETTERS.contains(&self.char()) { return Err(String::from("SYNTAX ERROR: expected id")) }
+        let start = self.idx;
+        while LETTERS.contains(&self.char()) || DIGITS.contains(&self.char()) { self.advance(); }
+        Ok(self.range(start, self.idx))
+    }
     pub fn next(&mut self) -> Result<Token, String> {
         while self.char() == " " || self.char() == "\t" || self.char() == "\n" { self.advance(); }
         let start = self.idx;
@@ -59,7 +67,7 @@ pub struct Lexer {
             let number = self.range(start, self.idx);
             return Ok(Token::new(TYPES::INT(number.parse::<isize>().unwrap()), start, self.idx));
         }
-        // BODY
+        // SUBS
         if self.char() == "(" {
             self.advance();
             let mut tokens: Vec<Token> = Vec::new();
@@ -72,14 +80,36 @@ pub struct Lexer {
             self.advance();
             return Ok(Token::new(TYPES::BODY(tokens), start, self.idx));
         }
+        if self.char() == "[" {
+            self.advance();
+            let mut tokens: Vec<Token> = Vec::new();
+            let res = self.next();
+            if res.is_err() { return Err(res.err().unwrap()) }
+            if self.char() != "]" { return Err(res.err().unwrap()) }
+            self.advance();
+            return Ok(Token::new(TYPES::SIZE(Box::new(res.unwrap())), start, self.idx));
+        }
+        if self.char() == "{" {
+            self.advance();
+            let mut ids: Vec<String> = Vec::new();
+            while self.char() != "}" && self.char() != "" {
+                let res = self.word();
+                if res.is_err() { return Err(res.err().unwrap()) }
+                let word = res.unwrap();
+                ids.push(String::from(word));
+                while self.char() == " " || self.char() == "\t" || self.char() == "\n" { self.advance(); }
+            }
+            self.advance();
+            return Ok(Token::new(TYPES::MAP(ids), start, self.idx));
+        }
         // SET
         if self.char() == "@" {
             self.advance();
             if LETTERS.contains(&self.char()) {
-                self.advance();
-                while LETTERS.contains(&self.char()) || DIGITS.contains(&self.char()) { self.advance(); }
-                let word = self.range(start+1, self.idx);
-                if ["if", "repeat", "while"].contains(&word) { return Err(String::from("SYNTAX ERROR: expected id, not keyword")) }
+                let res = self.word();
+                if res.is_err() { return Err(res.err().unwrap()) }
+                let word = &res.unwrap()[1..];
+                if WORDS.contains(&word) { return Err(String::from("SYNTAX ERROR: expected id, not keyword")) }
                 return Ok(Token::new(TYPES::SET(String::from(word)), start, self.idx));
             }
             return Err(String::from("SYNTAX ERROR: expected id"))
@@ -119,25 +149,47 @@ pub struct Lexer {
         }
         // WORD
         if LETTERS.contains(&self.char()) {
-            self.advance();
-            while LETTERS.contains(&self.char()) || DIGITS.contains(&self.char()) { self.advance(); }
-            let word = self.range(start, self.idx);
+            let res = self.word();
+            if res.is_err() { return Err(res.err().unwrap()) }
+            let word = res.unwrap();
             match word {
-                "if" => return Ok(Token::new(TYPES::IF(vec![self.next().unwrap()]), start, self.idx)),
-                "repeat" => return Ok(Token::new(TYPES::REPEAT(vec![self.next().unwrap()]), start, self.idx)),
-                "while" => return Ok(Token::new(TYPES::WHILE(vec![self.next().unwrap()]), start, self.idx)),
+                "if" => {
+                    let res = self.next();
+                    if res.is_err() { return Err(res.err().unwrap()) }
+                    return Ok(Token::new(TYPES::IF(vec![res.unwrap()]), start, self.idx));
+                }
+                "repeat" => {
+                    let res = self.next();
+                    if res.is_err() { return Err(res.err().unwrap()) }
+                    return Ok(Token::new(TYPES::REPEAT(vec![res.unwrap()]), start, self.idx));
+                }
+                "while" => {
+                    let res = self.next();
+                    if res.is_err() { return Err(res.err().unwrap()) }
+                    return Ok(Token::new(TYPES::WHILE(vec![res.unwrap()]), start, self.idx));
+                }
                 "macro" => {
                     if self.char() == "" { return Err(String::from("EOF ERROR: unexpected end of file")) }
-                    let mut id_token = self.next().unwrap();
+                    let mut size = Token::none();
+                    if self.char() == "[" {
+                        let res = self.next();
+                        if res.is_err() { return Err(res.err().unwrap()) }
+                        size = res.unwrap();
+                    }
+                    let res = self.next();
+                    if res.is_err() { return Err(res.err().unwrap()) }
+                    let mut id_token = res.unwrap();
                     let mut id = String::new();
                     match id_token.token {
                         TYPES::ID(id_) => id = id_,
                         _ => return Err(String::from("SYNTAX ERROR: expected id"))
                     }
                     if self.char() == "" { return Err(String::from("EOF ERROR: unexpected end of file")) }
-                    let body = vec![self.next().unwrap()];
-                    return Ok(Token::new(TYPES::MACRO(id, body), start, self.idx))
-                },
+                    let res = self.next();
+                    if res.is_err() { return Err(res.err().unwrap()) }
+                    let body = vec![res.unwrap()];
+                    return Ok(Token::new(TYPES::MACRO(id, Box::new(size), body), start, self.idx))
+                }
                 "print" => return Ok(Token::new(TYPES::PRINT, start, self.idx)),
                 _ => {}
             }
