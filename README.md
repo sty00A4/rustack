@@ -11,7 +11,7 @@ a stack based programming language written in rust
 
 ### Bodies
 
-`(1 2) 3` will do the same as before, but noww `(1 2)` is seen as one operation.
+`(1 2) 3` will do the same as before, but now `(1 2)` is seen as one operation.
 This is useful for flow control and macros.
 
 ### Operations
