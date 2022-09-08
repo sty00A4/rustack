@@ -7,12 +7,12 @@ a stack based programming language written in rust
 
 ### Numbers
 
-`1 2 3` will push the integer values 1, 2 and than 3 on top of the stack
+`1 2 3` will push the integer values 1, 2 and than 3 on top of the stack.
 
 ### Bodies
 
-`(1 2) 3` will do the same as before, but no `(1 2)` is seen as one operation.
-This is useful for flow control and macros
+`(1 2) 3` will do the same as before, but noww `(1 2)` is seen as one operation.
+This is useful for flow control and macros.
 
 ### Operations
 ```
@@ -57,8 +57,8 @@ macro [(int)] (id) (...)    Defines a macro with the id's name with the followin
 
 ### Special Keywords
 
-`print` takes the top value and prints it to the console (no new line)
+`print` takes the top value and prints it to the console (no new line).
 
-`STACK` prints the current stack as a string (with new line)
+`STACK` prints the current stack as a string (with new line).
 
-`LENGTH` pushes the stacks size as an integer on top of the stack
+`LENGTH` pushes the stacks size as an integer on top of the stack.
