@@ -11,7 +11,7 @@ static LETTERS: [&str; 53] = [
     "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "_"
 ];
 static VARS: [&str; 2] = ["STACK", "LENGTH"];
-static WORDS: [&str; 7] = ["if", "repeat", "while", "int", "str", "STACK", "LENGTH"];
+static WORDS: [&str; 5] = ["if", "repeat", "while", "STACK", "LENGTH"];
 
 // FILE
 #[derive(Debug)]
