@@ -63,7 +63,7 @@ pub struct Lexer {
         Ok(self.range(start, self.idx))
     }
     pub fn next(&mut self) -> Result<Token, String> {
-        while self.char() == " " || self.char() == "\t" || self.char() == "\n" { self.advance(); }
+        while self.char() == " " || self.char() == "\t" || self.char() == "\n" || self.char() == "\r" { self.advance(); }
         let start = self.idx;
         // NUMBER
         if DIGITS.contains(&self.char()) {
