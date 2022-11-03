@@ -15,11 +15,8 @@ struct Interpreter {
     pub fn std(&mut self) -> Result<(), String> {
         let path = "std/std.rst";
         let text = read_file(path);
-        let res_std_tokens = lex(&String::from(path), text);
-        if res_std_tokens.is_err() { return Err(res_std_tokens.err().unwrap()) }
-        let std_tokens = res_std_tokens.unwrap();
-        let res = self.interpret(&std_tokens);
-        if res.is_err() { return Err(res.err().unwrap()) }
+        let std_tokens = lex(&String::from(path), text)?;
+        self.interpret(&std_tokens)?;
         Ok(())
     }
     pub fn get(&mut self, token: Box<Token>) -> Result<isize, String> {
@@ -50,15 +47,14 @@ struct Interpreter {
                 TYPES::NONE => {},
                 TYPES::INT(value) => self.stack.push(*value),
                 TYPES::BODY(tokens_) => {
-                    let res = self.interpret(tokens_);
-                    if res.is_err() { return Err(res.err().unwrap()) }
+                    self.interpret(tokens_)?;
                 },
                 TYPES::SET(id) => {
                     if self.macros.contains_key(id) {
                         return Err(String::from("ID ERROR: id is registered macro and cannot be redefined"))
                     }
                     if self.vars.contains_key(id) {
-                        self.vars.insert(id.clone(), self.stack.pop().unwrap());
+                        *self.vars.get_mut(id).unwrap() = self.stack.pop().unwrap();
                         continue
                     }
                     if self.stack.len() == 0 { return Err(String::from("STACK ERROR: nothing on stack to take")) }
@@ -83,9 +79,7 @@ struct Interpreter {
                     if self.macros.contains_key(id) {
                         return Err(String::from(format!("MACRO ERROR: macro '{id}' is already defined")))
                     }
-                    let res_size = self.get(size_token.clone());
-                    if res_size.is_err() { return Err(res_size.err().unwrap()) }
-                    let size = res_size.unwrap();
+                    let size = self.get(size_token.clone())?;
                     self.memory.push((size as usize, tokens_.clone()));
                     self.macros.insert(id.clone(), self.memory.len()-1);
                 }
@@ -103,8 +97,7 @@ struct Interpreter {
                         }
                         let temp = self.vars.clone();
                         self.vars.clear();
-                        let res = self.interpret(&tokens_);
-                        if res.is_err() { return Err(res.err().unwrap()) }
+                        self.interpret(&tokens_)?;
                         self.vars = temp;
                         continue
                     }
@@ -114,15 +107,13 @@ struct Interpreter {
                     if self.stack.len() < 1 { continue }
                     let a = self.stack.pop().unwrap();
                     for i in 0..a {
-                        let res = self.interpret(tokens_);
-                        if res.is_err() { return Err(res.err().unwrap()) }
+                        self.interpret(tokens_)?;
                     }
                 }
                 TYPES::WHILE(tokens_) => {
                     if self.stack.len() < 1 { continue }
                     while self.stack.peek().unwrap() != &0 {
-                        let res = self.interpret(tokens_);
-                        if res.is_err() { return Err(res.err().unwrap()) }
+                        self.interpret(tokens_)?;
                     }
                 }
                 TYPES::IF(if_case, else_case) => {
@@ -130,12 +121,10 @@ struct Interpreter {
                     let a = self.stack.peek().unwrap();
                     if a != &0 {
                         self.stack.pop();
-                        let res = self.interpret(if_case);
-                        if res.is_err() { return Err(res.err().unwrap()) }
+                        self.interpret(if_case)?;
                     } else if else_case[0].token != TYPES::NONE {
                         self.stack.pop();
-                        let res = self.interpret(else_case);
-                        if res.is_err() { return Err(res.err().unwrap()) }
+                        self.interpret(else_case)?;
                     }
                 }
                 TYPES::ADD => {
@@ -212,7 +201,6 @@ struct Interpreter {
 pub fn run(tokens: Vec<Token>) -> Result<Stack<isize>, String> {
     let mut interpreter = Interpreter::new();
     interpreter.std();
-    let res = interpreter.interpret(&tokens);
-    if res.is_err() { return Err(res.err().unwrap()) }
+    interpreter.interpret(&tokens)?;
     Ok(interpreter.stack)
 }

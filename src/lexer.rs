@@ -76,9 +76,7 @@ pub struct Lexer {
             self.advance();
             let mut tokens: Vec<Token> = Vec::new();
             while self.char() != ")" && self.char() != "" {
-                let res = self.next();
-                if res.is_err() { return Err(res.err().unwrap()) }
-                tokens.push(res.unwrap());
+                tokens.push(self.next()?);
                 while self.char() == " " || self.char() == "\t" || self.char() == "\n" { self.advance(); }
             }
             self.advance();
@@ -87,19 +85,16 @@ pub struct Lexer {
         if self.char() == "[" {
             self.advance();
             let mut tokens: Vec<Token> = Vec::new();
-            let res = self.next();
-            if res.is_err() { return Err(res.err().unwrap()) }
-            if self.char() != "]" { return Err(res.err().unwrap()) }
+            let token = self.next()?;
+            if self.char() != "]" { return Err(String::from("SYNTAX ERROR: expected ']'")) }
             self.advance();
-            return Ok(Token::new(TYPES::SIZE(Box::new(res.unwrap())), start, self.idx));
+            return Ok(Token::new(TYPES::SIZE(Box::new(token)), start, self.idx));
         }
         if self.char() == "{" {
             self.advance();
             let mut ids: Vec<String> = Vec::new();
             while self.char() != "}" && self.char() != "" {
-                let res = self.word();
-                if res.is_err() { return Err(res.err().unwrap()) }
-                let word = res.unwrap();
+                let word = self.word()?;
                 ids.push(String::from(word));
                 while self.char() == " " || self.char() == "\t" || self.char() == "\n" { self.advance(); }
             }
@@ -110,9 +105,7 @@ pub struct Lexer {
         if self.char() == "@" {
             self.advance();
             if LETTERS.contains(&self.char()) {
-                let res = self.word();
-                if res.is_err() { return Err(res.err().unwrap()) }
-                let word = &res.unwrap()[1..];
+                let word = &(self.word()?)[1..];
                 if WORDS.contains(&word) { return Err(String::from("SYNTAX ERROR: expected id, not keyword")) }
                 return Ok(Token::new(TYPES::SET(String::from(word)), start, self.idx));
             }
@@ -153,54 +146,38 @@ pub struct Lexer {
         }
         // WORD
         if LETTERS.contains(&self.char()) {
-            let res = self.word();
-            if res.is_err() { return Err(res.err().unwrap()) }
-            let word = res.unwrap();
+            let word = self.word()?;
             match word {
                 "if" => {
-                    let res = self.next();
-                    if res.is_err() { return Err(res.err().unwrap()) }
-                    let if_case = res.unwrap();
+                    let if_case = self.next()?;
                     let mut else_case = Token::none();
                     while self.char() == " " || self.char() == "\t" || self.char() == "\n" { self.advance(); }
                     if self.range(self.idx, self.idx+"else".len()) == "else" {
                         self.idx += "else".len();
-                        let res = self.next();
-                        if res.is_err() { return Err(res.err().unwrap()) }
-                        else_case = res.unwrap();
+                        else_case = self.next()?;
                     }
                     return Ok(Token::new(TYPES::IF(vec![if_case], vec![else_case]), start, self.idx));
                 }
                 "repeat" => {
-                    let res = self.next();
-                    if res.is_err() { return Err(res.err().unwrap()) }
-                    return Ok(Token::new(TYPES::REPEAT(vec![res.unwrap()]), start, self.idx));
+                    return Ok(Token::new(TYPES::REPEAT(vec![self.next()?]), start, self.idx));
                 }
                 "while" => {
-                    let res = self.next();
-                    if res.is_err() { return Err(res.err().unwrap()) }
-                    return Ok(Token::new(TYPES::WHILE(vec![res.unwrap()]), start, self.idx));
+                    return Ok(Token::new(TYPES::WHILE(vec![self.next()?]), start, self.idx));
                 }
                 "macro" => {
                     if self.char() == "" { return Err(String::from("EOF ERROR: unexpected end of file")) }
                     let mut size = Token::none();
                     if self.char() == "[" {
-                        let res = self.next();
-                        if res.is_err() { return Err(res.err().unwrap()) }
-                        size = res.unwrap();
+                        size = self.next()?;
                     }
-                    let res = self.next();
-                    if res.is_err() { return Err(res.err().unwrap()) }
-                    let mut id_token = res.unwrap();
+                    let mut id_token = self.next()?;
                     let mut id = String::new();
                     match id_token.token {
                         TYPES::ID(id_) => id = id_,
                         _ => return Err(String::from("SYNTAX ERROR: expected id"))
                     }
                     if self.char() == "" { return Err(String::from("EOF ERROR: unexpected end of file")) }
-                    let res = self.next();
-                    if res.is_err() { return Err(res.err().unwrap()) }
-                    let body = vec![res.unwrap()];
+                    let body = vec![self.next()?];
                     return Ok(Token::new(TYPES::MACRO(id, Box::new(size), body), start, self.idx))
                 }
                 "print" => return Ok(Token::new(TYPES::PRINT, start, self.idx)),
@@ -214,16 +191,14 @@ pub struct Lexer {
     }
     pub fn lex(&mut self) -> Result<(), String> {
         while self.char() != "" {
-            let res = self.next();
-            if res.is_err() { return Err(res.err().unwrap()) }
-            self.tokens.push(res.unwrap());
+            let token = self.next()?;
+            self.tokens.push(token);
         }
         Ok(())
     }
 }
 pub fn lex(name: &String, text: String) -> Result<Vec<Token>, String> {
     let mut lexer = Lexer::new(File{name: name.clone(), text});
-    let res = lexer.lex();
-    if res.is_err() { return Err(res.err().unwrap()) }
+    lexer.lex()?;
     return Ok(lexer.tokens)
 }
